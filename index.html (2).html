@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제주특별자치도 실시간 인구 통계 아카이브</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700;800&family=Fira+Code:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Glassmorphism Panel styles */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .active-glow {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        /* Custom Hover Effect for SVG Map */
+        .map-region {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .map-region:hover {
+            fill-opacity: 0.85;
+            stroke: #f59e0b;
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.5));
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-6 select-none">
+
+    <!-- Top Header Navigation -->
+    <header class="w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 mb-6 border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-extrabold text-xl">
+                濟
+            </span>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-black tracking-wider bg-gradient-to-r from-emerald-400 via-cyan-400 to-amber-400 bg-clip-text text-transparent">
+                    제주특별자치도 인구 통계 익스플로러
+                </h1>
+                <p class="text-xs text-slate-400 tracking-widest code-font uppercase">Jeju Special Self-Governing Province Population Atlas</p>
+            </div>
+        </div>
+
+        <!-- Search Bar and Quick Fact -->
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div class="relative w-full sm:w-64">
+                <i data-lucide="search" class="absolute left-3 top-2.5 w-4.5 h-4.5 text-slate-500"></i>
+                <input type="text" id="searchInput" placeholder="읍면동 검색 (예: 노형동)..." 
+                       class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all">
+                <div id="searchResults" class="absolute left-0 right-0 top-11 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto hidden">
+                </div>
+            </div>
+            <button id="btnSoundToggle" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-xs text-amber-400 border border-amber-500/20 rounded-xl transition-all flex items-center gap-1.5 shrink-0">
+                <i data-lucide="volume-2" class="w-4 h-4"></i>
+                <span>사운드 피드백 ON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Overall Province KPI Scoreboard -->
+    <section class="w-full max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="glass-panel p-4 rounded-2xl border-white/5 flex items-center justify-between">
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">총 등록 인구 (2026)</div>
+                <div id="kpiTotalPop" class="text-xl md:text-2xl font-extrabold text-emerald-400 mt-1 code-font">678,168명</div>
+            </div>
+            <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl"><i data-lucide="users" class="w-6 h-6"></i></div>
+        </div>
+        <div class="glass-panel p-4 rounded-2xl border-white/5 flex items-center justify-between">
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">인구 밀도 최다 지역</div>
+                <div class="text-xl md:text-2xl font-extrabold text-cyan-400 mt-1">제주시 동지역</div>
+            </div>
+            <div class="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
+        </div>
+        <div class="glass-panel p-4 rounded-2xl border-white/5 flex items-center justify-between">
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">최다 인구 행정동</div>
+                <div class="text-xl md:text-2xl font-extrabold text-amber-400 mt-1">노형동 <span class="text-xs text-amber-500/80 font-normal">(5.5만)</span></div>
+            </div>
+            <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><i data-lucide="award" class="w-6 h-6"></i></div>
+        </div>
+        <div class="glass-panel p-4 rounded-2xl border-white/5 flex items-center justify-between">
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">평균 연령 지수 (추이)</div>
+                <div class="text-xl md:text-2xl font-extrabold text-purple-400 mt-1 code-font">43.8세 <span class="text-xs text-purple-500/80 font-normal">▲</span></div>
+            </div>
+            <div class="p-3 bg-purple-500/10 text-purple-400 rounded-xl"><i data-lucide="line-chart" class="w-6 h-6"></i></div>
+        </div>
+    </section>
+
+    <!-- Main Interface Split Screen -->
+    <main class="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 items-stretch justify-center flex-grow">
+        
+        <!-- Column 1: Detailed Eup/Myeon/Dong list & local distribution (Scrollable) -->
+        <div class="w-full lg:w-[350px] glass-panel p-5 rounded-2xl shadow-2xl flex flex-col justify-between max-h-[600px] lg:max-h-none">
+            <div class="flex flex-col gap-4 overflow-hidden h-full">
+                <div class="border-b border-slate-800 pb-3 flex justify-between items-center shrink-0">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="layout-grid" class="text-emerald-400 w-4.5 h-4.5"></i>
+                        <span id="regionListName">제주시 동지역</span> 상세 동·리 목록
+                    </h3>
+                    <span id="dongCountBadge" class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold code-font">19개 지역</span>
+                </div>
+
+                <!-- Dynamic Neighborhood list representing specific population figures -->
+                <div id="neighborhoodList" class="flex flex-col gap-2 overflow-y-auto pr-1 flex-grow">
+                    <!-- Dynamic Items will be rendered via JS -->
+                </div>
+            </div>
+
+            <!-- Total stats of current sector -->
+            <div class="mt-4 pt-3 border-t border-slate-800 shrink-0 bg-slate-900/30 p-3 rounded-xl flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-bold">해당 구역 소계:</span>
+                <span id="currentSectorTotal" class="code-font font-black text-amber-400 text-sm">382,400명</span>
+            </div>
+        </div>
+
+        <!-- Column 2: The Interactive Interactive Map Visualizer -->
+        <div class="flex-grow glass-panel p-4 rounded-2xl shadow-2xl flex flex-col items-center justify-center relative min-h-[400px]">
+            
+            <!-- Map Legend HUD -->
+            <div class="absolute top-4 left-4 z-20 pointer-events-none glass-panel px-4 py-2.5 rounded-xl border-emerald-500/20 shadow-lg">
+                <div class="text-[10px] text-emerald-400 font-semibold tracking-wider uppercase code-font">CHOROPLETH LEGEND</div>
+                <div class="flex items-center gap-1.5 mt-1">
+                    <span class="text-[10px] text-slate-400">저밀도</span>
+                    <div class="flex h-2.5 w-24 rounded overflow-hidden">
+                        <div class="bg-[#0f2a24] w-1/4"></div>
+                        <div class="bg-[#124d3a] w-1/4"></div>
+                        <div class="bg-[#107a53] w-1/4"></div>
+                        <div class="bg-[#10b981] w-1/4"></div>
+                    </div>
+                    <span class="text-[10px] text-emerald-400">고밀도</span>
+                </div>
+            </div>
+
+            <!-- Main Dynamic Interactive SVG Map -->
+            <div class="w-full h-full max-w-[760px] max-h-[380px] relative flex items-center justify-center overflow-hidden">
+                <svg id="jejuMap" viewBox="0 0 1000 500" class="w-full h-full block">
+                    <!-- Dynamic stylized definitions for patterns & shadows -->
+                    <defs>
+                        <filter id="glowEffect" x="-10%" y="-10%" width="120%" height="120%">
+                            <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#10b981" flood-opacity="0.5"/>
+                        </filter>
+                    </defs>
+
+                    <!-- Background grids for visual flair -->
+                    <g opacity="0.15" stroke="#334155" stroke-width="1">
+                        <line x1="0" y1="100" x2="1000" y2="100" />
+                        <line x1="0" y1="200" x2="1000" y2="200" />
+                        <line x1="0" y1="300" x2="1000" y2="300" />
+                        <line x1="0" y1="400" x2="1000" y2="400" />
+                        <line x1="200" y1="0" x2="200" y2="500" />
+                        <line x1="400" y1="0" x2="400" y2="500" />
+                        <line x1="600" y1="0" x2="600" y2="500" />
+                        <line x1="800" y1="0" x2="800" y2="500" />
+                    </g>
+
+                    <!-- Chuja-myeon (추자면) Inset Box -->
+                    <g transform="translate(40, 20)">
+                        <rect x="0" y="0" width="130" height="90" fill="none" stroke="rgba(148, 163, 184, 0.2)" stroke-dasharray="3,3" rx="8" />
+                        <text x="12" y="18" fill="#94a3b8" font-size="10" font-weight="bold">추자군도 (Chuja)</text>
+                    </g>
+
+                    <!-- Dynamic SVG Map Paths Representing Eup/Myeon/Dong Groups of Jeju Island -->
+                    <!-- Center Converging Point represents Hallasan National Park -->
+                    <g id="regionsGroup">
+                        <!-- Chuja-myeon Inset Island Path -->
+                        <path id="region_chuja" data-key="chuja" class="map-region" 
+                              d="M 85 55 C 95 55, 105 60, 95 72 C 85 80, 75 75, 85 55 Z" 
+                              fill="#134e4a" stroke="#0f172a" stroke-width="1.5" />
+
+                        <!-- Udo-myeon Outlying Island Path (Far East) -->
+                        <path id="region_udo" data-key="udo" class="map-region" 
+                              d="M 920 160 C 930 160, 935 170, 925 180 C 915 190, 910 180, 920 160 Z" 
+                              fill="#134e4a" stroke="#0f172a" stroke-width="1.5" />
+
+                        <!-- Mainland Sectors -->
+                        <!-- 1. 한경면 -->
+                        <path id="region_hangyeong" data-key="hangyeong" class="map-region" 
+                              d="M 80 250 C 100 180, 160 160, 200 180 L 250 250 L 180 320 C 130 320, 90 290, 80 250 Z" 
+                              fill="#0f2d24" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 2. 한림읍 -->
+                        <path id="region_hallim" data-key="hallim" class="map-region" 
+                              d="M 200 180 C 230 140, 280 120, 310 130 L 330 220 L 250 250 Z" 
+                              fill="#115e42" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 3. 애월읍 -->
+                        <path id="region_aewol" data-key="aewol" class="map-region" 
+                              d="M 310 130 C 350 110, 410 100, 440 110 L 430 210 L 330 220 Z" 
+                              fill="#047857" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 4. 제주시 동지역 -->
+                        <path id="region_jejusi_dongs" data-key="jejusi_dongs" class="map-region" 
+                              d="M 440 110 C 490 90, 550 90, 590 110 L 540 210 L 430 210 Z" 
+                              fill="#10b981" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 5. 조천읍 -->
+                        <path id="region_jochon" data-key="jochon" class="map-region" 
+                              d="M 590 110 C 630 100, 680 110, 710 130 L 630 220 L 540 210 Z" 
+                              fill="#047857" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 6. 구좌읍 -->
+                        <path id="region_gujwa" data-key="gujwa" class="map-region" 
+                              d="M 710 130 C 760 120, 820 140, 860 180 L 760 250 L 630 220 Z" 
+                              fill="#115e42" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 7. 성산읍 -->
+                        <path id="region_seongsan" data-key="seongsan" class="map-region" 
+                              d="M 860 180 C 900 200, 920 240, 910 270 C 890 320, 840 330, 810 320 L 760 250 Z" 
+                              fill="#134e3f" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 8. 표선면 -->
+                        <path id="region_pyoseon" data-key="pyoseon" class="map-region" 
+                              d="M 810 320 C 770 340, 710 350, 680 340 L 640 250 L 760 250 Z" 
+                              fill="#0f2d24" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 9. 남원읍 -->
+                        <path id="region_namwon" data-key="namwon" class="map-region" 
+                              d="M 680 340 C 640 360, 580 370, 550 360 L 540 250 L 640 250 Z" 
+                              fill="#115e42" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 10. 서귀포시 동지역 -->
+                        <path id="region_seogwipo_dongs" data-key="seogwipo_dongs" class="map-region" 
+                              d="M 550 360 C 500 380, 440 380, 410 360 L 430 250 L 540 250 Z" 
+                              fill="#059669" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 11. 안덕면 -->
+                        <path id="region_andeok" data-key="andeok" class="map-region" 
+                              d="M 410 360 C 370 360, 320 350, 280 330 L 320 250 L 430 250 Z" 
+                              fill="#134e3f" stroke="#0f172a" stroke-width="2" />
+                        
+                        <!-- 12. 대정읍 -->
+                        <path id="region_daejeong" data-key="daejeong" class="map-region" 
+                              d="M 280 330 C 230 330, 190 330, 180 320 L 250 250 L 320 250 Z" 
+                              fill="#115e42" stroke="#0f172a" stroke-width="2" />
+                    </g>
+
+                    <!-- Decorative Mt. Halla (한라산) Stylized Contour Target -->
+                    <g transform="translate(485, 235)" opacity="0.8">
+                        <ellipse cx="0" cy="0" rx="40" ry="22" fill="none" stroke="rgba(245, 158, 11, 0.4)" stroke-width="1.5" />
+                        <ellipse cx="0" cy="0" rx="25" ry="14" fill="none" stroke="rgba(245, 158, 11, 0.6)" stroke-width="1.5" />
+                        <ellipse cx="0" cy="0" rx="10" ry="6" fill="rgba(245, 158, 11, 0.2)" stroke="rgba(245, 158, 11, 0.9)" stroke-width="2" />
+                        <text x="0" y="-14" fill="#fbbf24" font-size="9" text-anchor="middle" font-weight="extrabold">한라산 (Mt.Halla)</text>
+                    </g>
+                </svg>
+
+                <!-- Dynamic Floating Tooltip Element (Coordinates updated via cursor hover) -->
+                <div id="mapTooltip" class="absolute pointer-events-none bg-slate-950/95 text-slate-200 p-3 rounded-xl border border-slate-700/60 shadow-2xl text-xs flex-col gap-1.5 hidden min-w-[180px] z-50">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                        <span id="tooltipName" class="font-black text-slate-100 text-sm">제주시 동지역</span>
+                        <span id="tooltipCity" class="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">제주시</span>
+                    </div>
+                    <div class="flex justify-between mt-1">
+                        <span class="text-slate-400">총 인구수:</span>
+                        <span id="tooltipPop" class="font-bold text-amber-400 code-font">382,400명</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">인구 밀도:</span>
+                        <span id="tooltipDensity" class="font-bold text-slate-300 code-font">1,504.3 명/km²</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compass Overlay Grid Background -->
+            <div class="absolute bottom-4 left-4 text-[10px] code-font text-slate-500 pointer-events-none">
+                GRID MATRIX: COORD SYSTEM CALIBRATED
+            </div>
+        </div>
+
+        <!-- Column 3: Advanced Analytics & Annual Statistics Chart -->
+        <div class="w-full lg:w-[420px] flex flex-col gap-4">
+            
+            <!-- Annual Trend Chart Panel -->
+            <div class="glass-panel p-5 rounded-2xl shadow-lg">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                    <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i data-lucide="line-chart" class="text-emerald-400 w-4.5 h-4.5"></i>
+                        <span id="trendRegionName">제주시 동지역</span> 연간 인구 추이
+                    </h3>
+                    <span class="text-[10px] text-slate-400 code-font">2020 ~ 2026</span>
+                </div>
+
+                <!-- Custom Vector Chart Container drawn via dynamic Canvas/SVG elements -->
+                <div class="w-full h-44 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-800 relative flex items-center justify-center p-2">
+                    <svg id="trendSvg" class="w-full h-full block">
+                        <!-- Dynamic vector line paths drawn by JS -->
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Demographics & Gender breakdown panel -->
+            <div class="glass-panel p-5 rounded-2xl shadow-lg flex-grow flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3 mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="text-cyan-400 w-4.5 h-4.5"></i>
+                        세대/연령 및 성별 구성비 분석
+                    </h3>
+
+                    <!-- Gender Ratio progress bar -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span class="text-cyan-400 flex items-center gap-1">남성 <span id="valMalePct">49.9%</span></span>
+                            <span class="text-pink-400 flex items-center gap-1">여성 <span id="valFemalePct">50.1%</span></span>
+                        </div>
+                        <div class="w-full h-2.5 bg-slate-900 rounded-full flex overflow-hidden">
+                            <div id="barMale" class="bg-gradient-to-r from-cyan-500 to-cyan-400 h-full" style="width: 49.9%"></div>
+                            <div id="barFemale" class="bg-gradient-to-r from-pink-500 to-pink-400 h-full" style="width: 50.1%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Age breakdowns -->
+                    <div class="space-y-3 mt-4">
+                        <div class="text-xs">
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                                    유소년 인구 (0 ~ 14세)
+                                </span>
+                                <span id="valAgeYouth" class="code-font font-bold">18%</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                                <div id="barAgeYouth" class="bg-blue-400 h-full" style="width: 18%"></div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs">
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    생산가능 인구 (15 ~ 64세)
+                                </span>
+                                <span id="valAgeWorking" class="code-font font-bold">68%</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                                <div id="barAgeWorking" class="bg-emerald-400 h-full" style="width: 68%"></div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs">
+                            <div class="flex justify-between text-slate-400 mb-1">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                    고령 인구 (65세 이상)
+                                </span>
+                                <span id="valAgeElderly" class="code-font font-bold">14%</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
+                                <div id="barAgeElderly" class="bg-amber-400 h-full" style="width: 14%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Analytical alert text box -->
+                <div class="mt-4 pt-3 border-t border-slate-800 flex items-start gap-2 text-[11px] text-slate-400 bg-slate-900/40 p-3 rounded-xl leading-relaxed">
+                    <i data-lucide="info" class="text-emerald-400 w-4.5 h-4.5 shrink-0 mt-0.5"></i>
+                    <p id="analysisMessage">제주시 동지역은 노형동, 이도2동, 아라동 등 대규모 배후 단지를 필두로 전 도내 인구의 절반 이상이 밀집된 복합 메트로폴리스 구역입니다.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Page Footer -->
+    <footer class="w-full text-center mt-6 text-xs text-slate-600 border-t border-slate-900 pt-4">
+        제주특별자치도 읍면동 실시간 통계 포털 &copy; 2026. 주민등록인구 통계 기준 전용 렌더링.
+    </footer>
+
+    <script>
+        // Lucide Icons Render
+        lucide.createIcons();
+
+        // Audio synthesizer via Web Audio API for tactical futuristic click feedback sounds
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+
+        function playFeedbackSound(pitch = 220, duration = 0.08) {
+            if (!soundEnabled) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+            // exponential ramp to zero to avoid pops
+            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + duration);
+
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const btnSoundToggle = document.getElementById('btnSoundToggle');
+        btnSoundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            if (soundEnabled) {
+                btnSoundToggle.classList.remove('opacity-50');
+                btnSoundToggle.querySelector('span').textContent = '사운드 피드백 ON';
+                playFeedbackSound(440, 0.15);
+            } else {
+                btnSoundToggle.classList.add('opacity-50');
+                btnSoundToggle.querySelector('span').textContent = '음소거 완료';
+            }
+        });
+
+        // Detailed Demographics Dataset of Jeju-do (Eups, Myeons, Dongs)
+        const regionData = {
+            hangyeong: {
+                name: "한경면",
+                city: "제주시",
+                population: 10012,
+                area: 79.1,
+                density: 126.5,
+                trend: [10210, 10180, 10140, 10110, 10080, 10040, 10012],
+                gender: { male: 5116, female: 4896 },
+                ageBreakdown: { youth: 10, working: 55, elderly: 35 },
+                message: "한경면은 아름다운 차귀도 포구와 서쪽 해안을 품은 평화로운 농경 중심지로, 최근 예술가 및 휴양 이주민들의 정착 비중이 꾸준히 증가하고 있습니다.",
+                dongs: [
+                    { name: "고산리", population: 2450 },
+                    { name: "신창리", population: 1980 },
+                    { name: "저지리", population: 1180 },
+                    { name: "판포리", population: 990 },
+                    { name: "두모리", population: 840 },
+                    { name: "조수리", population: 922 },
+                    { name: "금등리", population: 1010 },
+                    { name: "용수리", population: 640 }
+                ]
+            },
+            hallim: {
+                name: "한림읍",
+                city: "제주시",
+                population: 21150,
+                area: 91.1,
+                density: 232.1,
+                trend: [22100, 21900, 21700, 21500, 21300, 21200, 21150],
+                gender: { male: 10850, female: 10300 },
+                ageBreakdown: { youth: 12, working: 61, elderly: 27 },
+                message: "한림읍은 협재 및 금능 해수욕장, 그리고 한림항이라는 훌륭한 수산업 인프라를 보유하여 1차 및 3차 산업이 균형을 이루며 발달한 서부 최대 항구 거점입니다.",
+                dongs: [
+                    { name: "대림리", population: 3200 },
+                    { name: "귀덕리", population: 2900 },
+                    { name: "한수리", population: 2100 },
+                    { name: "상대리", population: 2100 },
+                    { name: "금악리", population: 2300 },
+                    { name: "명월리", population: 2200 },
+                    { name: "옹포리", population: 1850 },
+                    { name: "동명리", population: 1800 },
+                    { name: "협재리", population: 1450 },
+                    { name: "금능리", population: 1250 }
+                ]
+            },
+            aewol: {
+                name: "애월읍",
+                city: "제주시",
+                population: 38540,
+                area: 144.9,
+                density: 265.9,
+                trend: [36200, 36900, 37500, 38100, 38400, 38500, 38540],
+                gender: { male: 19540, female: 19000 },
+                ageBreakdown: { youth: 15, working: 63, elderly: 22 },
+                message: "애월읍은 제주시 도심부 서측에 연접하여 하귀 택지지구 등의 집중 개발로 인해 읍 지역 중 가장 대규모 인구 전입이 이루어진 주거 선호 구역입니다.",
+                dongs: [
+                    { name: "하귀1리", population: 8200 },
+                    { name: "하귀2리", population: 5100 },
+                    { name: "광령리", population: 4800 },
+                    { name: "애월리", population: 3100 },
+                    { name: "유수암리", population: 2900 },
+                    { name: "신엄리", population: 2800 },
+                    { name: "봉성리", population: 2300 },
+                    { name: "고성리", population: 2100 },
+                    { name: "구엄리", population: 1950 },
+                    { name: "곽지리", population: 1850 },
+                    { name: "소길리", population: 1840 },
+                    { name: "납읍리", population: 1600 }
+                ]
+            },
+            jejusi_dongs: {
+                name: "제주시 동지역",
+                city: "제주시",
+                population: 382400,
+                area: 254.2,
+                density: 1504.3,
+                trend: [375000, 378000, 380500, 381800, 382100, 382300, 382400],
+                gender: { male: 190900, female: 191500 },
+                ageBreakdown: { youth: 18, working: 68, elderly: 14 },
+                message: "제주시 동지역은 노형, 연동, 아라 등의 신흥 개발 단지를 위주로 금융, 학군, 행정이 압축 발전한 도내 심장부 메트로폴리스입니다.",
+                dongs: [
+                    { name: "노형동", population: 55410 },
+                    { name: "이도2동", population: 49120 },
+                    { name: "연동", population: 43280 },
+                    { name: "아라동", population: 39450 },
+                    { name: "일도2동", population: 32180 },
+                    { name: "삼양동", population: 26450 },
+                    { name: "화북동", population: 24150 },
+                    { name: "외도동", population: 22310 },
+                    { name: "오라동", population: 16210 },
+                    { name: "용담2동", population: 14650 },
+                    { name: "삼도1동", population: 13580 },
+                    { name: "건입동", population: 9240 },
+                    { name: "삼도2동", population: 8020 },
+                    { name: "이도1동", population: 7340 },
+                    { name: "용담1동", population: 7120 },
+                    { name: "봉개동", population: 5240 },
+                    { name: "이호동", population: 4520 },
+                    { name: "도두동", population: 3350 },
+                    { name: "일도1동", population: 2520 }
+                ]
+            },
+            jochon: {
+                name: "조천읍",
+                city: "제주시",
+                population: 26688,
+                area: 117.0,
+                density: 228.1,
+                trend: [25100, 25500, 25900, 26200, 26500, 26600, 26688],
+                gender: { male: 13580, female: 13108 },
+                ageBreakdown: { youth: 14, working: 62, elderly: 24 },
+                message: "조천읍은 세계 최고 수준의 자연경관인 에메랄드 함덕 해변 및 선흘 곶자왈을 지닌 생태 전원 구역이자 교육적 선호 주거지로 이목을 끕니다.",
+                dongs: [
+                    { name: "함덕리", population: 7850 },
+                    { name: "조천리", population: 5120 },
+                    { name: "신촌리", population: 3900 },
+                    { name: "선흘리", population: 2100 },
+                    { name: "대흘리", population: 1950 },
+                    { name: "북촌리", population: 1650 },
+                    { name: "와산리", population: 1450 },
+                    { name: "신흥리", population: 1200 },
+                    { name: "교래리", population: 1468 }
+                ]
+            },
+            gujwa: {
+                name: "구좌읍",
+                city: "제주시",
+                population: 15755,
+                area: 185.9,
+                density: 84.7,
+                trend: [16100, 16000, 15900, 15850, 15800, 15780, 15755],
+                gender: { male: 8239, female: 7516 },
+                ageBreakdown: { youth: 10, working: 56, elderly: 34 },
+                message: "구좌읍은 해녀의 숨결이 숨 쉬는 동부 연안 농어촌의 원형으로, 당근과 구좌 감자 등 당도 높은 우수 농산물이 대규모로 수확되는 청정 지역입니다.",
+                dongs: [
+                    { name: "세화리", population: 3450 },
+                    { name: "김녕리", population: 2850 },
+                    { name: "종달리", population: 2100 },
+                    { name: "하도리", population: 1950 },
+                    { name: "송당리", population: 1705 },
+                    { name: "평대리", population: 1600 },
+                    { name: "행원리", population: 1200 },
+                    { name: "덕천리", population: 900 }
+                ]
+            },
+            seongsan: {
+                name: "성산읍",
+                city: "서귀포시",
+                population: 15210,
+                area: 107.8,
+                density: 141.1,
+                trend: [15600, 15500, 15400, 15300, 15250, 15230, 15210],
+                gender: { male: 7810, female: 7400 },
+                ageBreakdown: { youth: 11, working: 59, elderly: 30 },
+                message: "성산읍은 천연기념물 성산일출봉과 우도 관문인 성산항을 품고 있어, 제주 관광 경제를 견인하는 최고 핵심 거점 중 하나입니다.",
+                dongs: [
+                    { name: "고성리", population: 4200 },
+                    { name: "성산리", population: 2800 },
+                    { name: "신산리", population: 1950 },
+                    { name: "온평리", population: 1650 },
+                    { name: "수산리", population: 1450 },
+                    { name: "시흥리", population: 1210 },
+                    { name: "삼달리", population: 1100 },
+                    { name: "난산리", population: 850 }
+                ]
+            },
+            pyoseon: {
+                name: "표선면",
+                city: "서귀포시",
+                population: 12480,
+                area: 135.2,
+                density: 92.3,
+                trend: [12650, 12600, 12550, 12500, 12490, 12485, 12480],
+                gender: { male: 6380, female: 6100 },
+                ageBreakdown: { youth: 11, working: 58, elderly: 31 },
+                message: "표선면은 넓고 얕은 모래사장인 표선해수욕장과 성읍민속마을 등 역사의 자취가 보존되어 있는 명품 관광 테라피 구역입니다.",
+                dongs: [
+                    { name: "표선리", population: 5200 },
+                    { name: "토산리", population: 1650 },
+                    { name: "성읍리", population: 1680 },
+                    { name: "하천리", population: 1400 },
+                    { name: "가시리", population: 1350 },
+                    { name: "세화리", population: 1200 }
+                ]
+            },
+            namwon: {
+                name: "남원읍",
+                city: "서귀포시",
+                population: 18620,
+                area: 188.7,
+                density: 98.6,
+                trend: [19100, 19000, 18900, 18800, 18700, 18650, 18620],
+                gender: { male: 9420, female: 9200 },
+                ageBreakdown: { youth: 11, working: 57, elderly: 32 },
+                message: "남원읍은 대한민국에서 가장 온화하고 기후가 따뜻하여, 최고 품질의 고당도 노지 및 하우스 감귤을 수확해 공급하는 대표 주산지입니다.",
+                dongs: [
+                    { name: "남원리", population: 5800 },
+                    { name: "위미리", population: 4100 },
+                    { name: "태흥리", population: 2150 },
+                    { name: "신례리", population: 1950 },
+                    { name: "하례리", population: 1650 },
+                    { name: "수망리", population: 1550 },
+                    { name: "의귀리", population: 1420 }
+                ]
+            },
+            seogwipo_dongs: {
+                name: "서귀포시 동지역",
+                city: "서귀포시",
+                population: 104500,
+                area: 281.4,
+                density: 371.3,
+                trend: [101500, 102300, 103100, 103800, 104200, 104400, 104500],
+                gender: { male: 52400, female: 52100 },
+                ageBreakdown: { youth: 14, working: 64, elderly: 22 },
+                message: "서귀포시 동지역은 새연교, 천지연폭포, 이중섭거리 등 문화 콘텐츠와 관광 명소가 조밀하게 응축되어 우수한 도시 라이프를 자랑합니다.",
+                dongs: [
+                    { name: "동홍동", population: 22150 },
+                    { name: "대륜동", population: 15210 },
+                    { name: "대천동", population: 14120 },
+                    { name: "중문동", population: 12240 },
+                    { name: "서홍동", population: 10650 },
+                    { name: "효돈동", population: 5210 },
+                    { name: "영천동", population: 5120 },
+                    { name: "송산동", population: 4310 },
+                    { name: "예래동", population: 3840 },
+                    { name: "천지동", population: 3550 },
+                    { name: "중앙동", population: 3120 },
+                    { name: "정방동", population: 2210 }
+                ]
+            },
+            andeok: {
+                name: "안덕면",
+                city: "서귀포시",
+                population: 12180,
+                area: 105.6,
+                density: 115.3,
+                trend: [11900, 12000, 12080, 12120, 12150, 12170, 12180],
+                gender: { male: 6180, female: 6000 },
+                ageBreakdown: { youth: 13, working: 61, elderly: 26 },
+                message: "안덕면은 산방산, 신화역사공원, 영어교육도시 배후 단지 등 글로벌 교육 교류단지와 천혜의 해안 기암절벽을 아우르는 명품 지역입니다.",
+                dongs: [
+                    { name: "화순리", population: 3100 },
+                    { name: "사계리", population: 2150 },
+                    { name: "서광리", population: 1650 },
+                    { name: "덕수리", population: 1400 },
+                    { name: "동광리", population: 1150 },
+                    { name: "감산리", population: 1850 },
+                    { name: "창천리", population: 880 }
+                ]
+            },
+            daejeong: {
+                name: "대정읍",
+                city: "서귀포시",
+                population: 22450,
+                area: 59.6,
+                density: 376.6,
+                trend: [21800, 22100, 22300, 22400, 22430, 22440, 22450],
+                gender: { male: 11350, female: 11100 },
+                ageBreakdown: { youth: 16, working: 62, elderly: 22 },
+                message: "대정읍은 모슬포항 갈치 축제와 마라도, 가파도로 향하는 시발점이며 영어교육도시 정주인구가 정착해 교육열이 무척 높습니다.",
+                dongs: [
+                    { name: "하모리", population: 5900 },
+                    { name: "상모리", population: 4800 },
+                    { name: "보성리", population: 3150 },
+                    { name: "일과리", population: 2500 },
+                    { name: "무릉리", population: 2150 },
+                    { name: "신도리", population: 1850 },
+                    { name: "신평리", population: 1200 },
+                    { name: "가파리", population: 750 },
+                    { name: "마라리", population: 150 }
+                ]
+            },
+            udo: {
+                name: "우도면",
+                city: "제주시",
+                population: 1680,
+                area: 6.18,
+                density: 271.8,
+                trend: [1730, 1710, 1700, 1690, 1685, 1682, 1680],
+                gender: { male: 855, female: 825 },
+                ageBreakdown: { youth: 8, working: 54, elderly: 38 },
+                message: "우도면은 소가 누워있는 모양의 수려한 화산 섬 전역이 관광지로 지정되어 연간 백만 명 이상의 인파가 찾아드는 미니 휴양특구입니다.",
+                dongs: [
+                    { name: "서광리", population: 610 },
+                    { name: "오봉리", population: 450 },
+                    { name: "동천리", population: 420 },
+                    { name: "연평리", population: 200 }
+                ]
+            },
+            chuja: {
+                name: "추자면",
+                city: "제주시",
+                population: 1598,
+                area: 7.05,
+                density: 226.6,
+                trend: [1780, 1720, 1680, 1640, 1610, 1602, 1598],
+                gender: { male: 830, female: 768 },
+                ageBreakdown: { youth: 7, working: 51, elderly: 42 },
+                message: "추자면은 천혜의 청정 바다 낚시 명소이자 굴비 가공 어업이 주력을 이뤄 풍요로운 수산경제 기반을 완벽하게 이룩한 섬 군도 지역입니다.",
+                dongs: [
+                    { name: "대서리", population: 640 },
+                    { name: "신양리", population: 520 },
+                    { name: "영흥리", population: 310 },
+                    { name: "예초리", population: 128 }
+                ]
+            }
+        };
+
+        let currentSelectedRegionKey = "jejusi_dongs"; // Defaults
+
+        // Display Tooltip Element Elements
+        const mapTooltip = document.getElementById('mapTooltip');
+        const tooltipName = document.getElementById('tooltipName');
+        const tooltipCity = document.getElementById('tooltipCity');
+        const tooltipPop = document.getElementById('tooltipPop');
+        const tooltipDensity = document.getElementById('tooltipDensity');
+
+        // Main Dashboard Left list selectors
+        const regionListName = document.getElementById('regionListName');
+        const dongCountBadge = document.getElementById('dongCountBadge');
+        const neighborhoodList = document.getElementById('neighborhoodList');
+        const currentSectorTotal = document.getElementById('currentSectorTotal');
+
+        // Stats selectors
+        const trendRegionName = document.getElementById('trendRegionName');
+        const analysisMessage = document.getElementById('analysisMessage');
+
+        // Age Indicators
+        const valMalePct = document.getElementById('valMalePct');
+        const valFemalePct = document.getElementById('valFemalePct');
+        const barMale = document.getElementById('barMale');
+        const barFemale = document.getElementById('barFemale');
+
+        const valAgeYouth = document.getElementById('valAgeYouth');
+        const valAgeWorking = document.getElementById('valAgeWorking');
+        const valAgeElderly = document.getElementById('valAgeElderly');
+
+        const barAgeYouth = document.getElementById('barAgeYouth');
+        const barAgeWorking = document.getElementById('barAgeWorking');
+        const barAgeElderly = document.getElementById('barAgeElderly');
+
+        // Initialize details based on the selected region
+        function populateDashboard(key) {
+            currentSelectedRegionKey = key;
+            const data = regionData[key];
+            if (!data) return;
+
+            // Highlight target in lists and visual maps
+            document.querySelectorAll('.map-region').forEach(p => {
+                p.classList.remove('active-glow');
+                p.setAttribute('stroke', '#0f172a');
+                p.setAttribute('stroke-width', '1.5');
+            });
+            const activePath = document.getElementById(`region_${key}`);
+            if (activePath) {
+                activePath.classList.add('active-glow');
+                activePath.setAttribute('stroke', '#10b981');
+                activePath.setAttribute('stroke-width', '2.5');
+            }
+
+            // Populate Sidebar Titles
+            regionListName.textContent = data.name;
+            dongCountBadge.textContent = `${data.dongs.length}개 구역`;
+            currentSectorTotal.textContent = `${data.population.toLocaleString()}명`;
+
+            // Clear & Populate Sidebar List
+            neighborhoodList.innerHTML = '';
+            
+            // Find max to scale progress-bars inside lists beautifully
+            const maxDongPop = Math.max(...data.dongs.map(d => d.population));
+
+            data.dongs.forEach((dong, idx) => {
+                const percentageOfMax = (dong.population / maxDongPop) * 100;
+                const row = document.createElement('div');
+                row.className = "p-3 bg-slate-900/60 rounded-xl border border-slate-800/50 hover:border-emerald-500/30 transition-all flex flex-col gap-2 cursor-pointer group";
+                row.onclick = () => {
+                    playFeedbackSound(330 + (idx * 15), 0.05);
+                };
+                
+                row.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-slate-200 group-hover:text-emerald-400 transition-colors">${dong.name}</span>
+                        <span class="code-font font-semibold text-amber-400">${dong.population.toLocaleString()}명</span>
+                    </div>
+                    <div class="w-full h-1 bg-slate-950 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full" style="width: ${percentageOfMax}%"></div>
+                    </div>
+                `;
+                neighborhoodList.appendChild(row);
+            });
+
+            // Update stats labels
+            trendRegionName.textContent = data.name;
+            analysisMessage.textContent = data.message;
+
+            // Render custom trends chart
+            renderTrendChart(data.trend);
+
+            // Demographic Ratio distributions
+            const totalGen = data.gender.male + data.gender.female;
+            const malePct = ((data.gender.male / totalGen) * 100).toFixed(1);
+            const femalePct = ((data.gender.female / totalGen) * 100).toFixed(1);
+
+            valMalePct.textContent = `${malePct}%`;
+            valFemalePct.textContent = `${femalePct}%`;
+            barMale.style.width = `${malePct}%`;
+            barFemale.style.width = `${femalePct}%`;
+
+            valAgeYouth.textContent = `${data.ageBreakdown.youth}%`;
+            valAgeWorking.textContent = `${data.ageBreakdown.working}%`;
+            valAgeElderly.textContent = `${data.ageBreakdown.elderly}%`;
+
+            barAgeYouth.style.width = `${data.ageBreakdown.youth}%`;
+            barAgeWorking.style.width = `${data.ageBreakdown.working}%`;
+            barAgeElderly.style.width = `${data.ageBreakdown.elderly}%`;
+        }
+
+        // Custom SVG Trend Line Chart Drawing with precise math plotting
+        function renderTrendChart(trendArray) {
+            const svg = document.getElementById('trendSvg');
+            svg.innerHTML = ''; // Reset frame
+
+            const years = ["'20", "'21", "'22", "'23", "'24", "'25", "'26"];
+            const padding = 25;
+            const width = svg.clientWidth || 360;
+            const height = svg.clientHeight || 176;
+
+            const minVal = Math.min(...trendArray) * 0.998;
+            const maxVal = Math.max(...trendArray) * 1.002;
+            const valRange = maxVal - minVal;
+
+            // Generate Coordinate plots
+            const points = trendArray.map((val, idx) => {
+                const x = padding + (idx * (width - 2 * padding) / (trendArray.length - 1));
+                const y = (height - padding) - ((val - minVal) / valRange * (height - 2 * padding));
+                return { x, y, val };
+            });
+
+            // Draw clean background horizontal line guides
+            for (let i = 0; i <= 3; i++) {
+                const guideY = padding + (i * (height - 2 * padding) / 3);
+                const guideLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                guideLine.setAttribute("x1", padding);
+                guideLine.setAttribute("y1", guideY);
+                guideLine.setAttribute("x2", width - padding);
+                guideLine.setAttribute("y2", guideY);
+                guideLine.setAttribute("stroke", "rgba(51, 65, 85, 0.2)");
+                guideLine.setAttribute("stroke-dasharray", "2,2");
+                svg.appendChild(guideLine);
+            }
+
+            // Draw line connecting the trend dots with smooth curved gradients
+            let dString = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+                // Bezier cubic smoothing points
+                const cpX1 = points[i-1].x + (points[i].x - points[i-1].x) / 2;
+                const cpY1 = points[i-1].y;
+                const cpX2 = points[i-1].x + (points[i].x - points[i-1].x) / 2;
+                const cpY2 = points[i].y;
+                dString += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${points[i].x} ${points[i].y}`;
+            }
+
+            // Gradient Stroke Definitions
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            defs.innerHTML = `
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
+                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+                </linearGradient>
+            `;
+            svg.appendChild(defs);
+
+            // Create a closed path below the trend line for shaded gradient area
+            const closedPathD = `${dString} L ${points[points.length-1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+            const areaPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            areaPath.setAttribute("d", closedPathD);
+            areaPath.setAttribute("fill", "url(#chartGrad)");
+            svg.appendChild(areaPath);
+
+            // Draw actual main Trend Line path
+            const trendPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            trendPath.setAttribute("d", dString);
+            trendPath.setAttribute("fill", "none");
+            trendPath.setAttribute("stroke", "#10b981");
+            trendPath.setAttribute("stroke-width", "3");
+            trendPath.setAttribute("stroke-linecap", "round");
+            svg.appendChild(trendPath);
+
+            // Draw glowing dots and text labels for each point in sequence
+            points.forEach((pt, idx) => {
+                // Main anchor circle dot
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("cx", pt.x);
+                dot.setAttribute("cy", pt.y);
+                dot.setAttribute("r", idx === points.length - 1 ? "5" : "3.5");
+                dot.setAttribute("fill", idx === points.length - 1 ? "#fbbf24" : "#10b981");
+                dot.setAttribute("stroke", "#0b0f19");
+                dot.setAttribute("stroke-width", "1.5");
+                svg.appendChild(dot);
+
+                // Floating label numbers on first and last coordinates
+                if (idx === 0 || idx === points.length - 1) {
+                    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    label.setAttribute("x", pt.x);
+                    label.setAttribute("y", pt.y - 10);
+                    label.setAttribute("fill", "#fbbf24");
+                    label.setAttribute("font-size", "9");
+                    label.setAttribute("font-weight", "bold");
+                    label.setAttribute("text-anchor", "middle");
+                    label.setAttribute("class", "code-font");
+                    label.textContent = pt.val.toLocaleString();
+                    svg.appendChild(label);
+                }
+
+                // Horizontal Axis text labeling
+                const axisLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                axisLabel.setAttribute("x", pt.x);
+                axisLabel.setAttribute("y", height - 8);
+                axisLabel.setAttribute("fill", "#64748b");
+                axisLabel.setAttribute("font-size", "9");
+                axisLabel.setAttribute("text-anchor", "middle");
+                axisLabel.setAttribute("class", "code-font");
+                axisLabel.textContent = years[idx];
+                svg.appendChild(axisLabel);
+            });
+        }
+
+        // Attach Map Hover and Trigger listeners
+        document.querySelectorAll('.map-region').forEach(path => {
+            const key = path.getAttribute('data-key');
+            const data = regionData[key];
+            if (!data) return;
+
+            // Hover status tooltip coordinates update
+            path.addEventListener('mousemove', (e) => {
+                tooltipName.textContent = data.name;
+                tooltipCity.textContent = data.city;
+                tooltipPop.textContent = `${data.population.toLocaleString()}명`;
+                tooltipDensity.textContent = `${data.density.toFixed(1)} 명/km²`;
+
+                // Calculate relative position based on parent map container
+                const containerRect = document.getElementById('jejuMap').parentNode.getBoundingClientRect();
+                const xOffset = e.clientX - containerRect.left + 15;
+                const yOffset = e.clientY - containerRect.top - 50;
+
+                mapTooltip.style.left = `${xOffset}px`;
+                mapTooltip.style.top = `${yOffset}px`;
+                mapTooltip.classList.remove('hidden');
+                mapTooltip.classList.add('flex');
+            });
+
+            path.addEventListener('mouseleave', () => {
+                mapTooltip.classList.add('hidden');
+                mapTooltip.classList.remove('flex');
+            });
+
+            // Lock click action to render entire detailed metrics
+            path.addEventListener('click', () => {
+                playFeedbackSound(260, 0.08);
+                populateDashboard(key);
+            });
+        });
+
+        // Interactive search engine processing
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        // Flat indices array of all subdivisions
+        const searchPool = [];
+        Object.keys(regionData).forEach(regKey => {
+            const reg = regionData[regKey];
+            // Push Eup/Myeon main
+            searchPool.push({
+                displayName: `${reg.name} (${reg.city})`,
+                type: 'region',
+                key: regKey
+            });
+            // Push sub villages
+            reg.dongs.forEach(dong => {
+                searchPool.push({
+                    displayName: `${dong.name} - [${reg.name}]`,
+                    type: 'dong',
+                    key: regKey,
+                    dongName: dong.name,
+                    pop: dong.population
+                });
+            });
+        });
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            if (!query) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            const matches = searchPool.filter(item => 
+                item.displayName.toLowerCase().includes(query)
+            ).slice(0, 5); // top 5 only
+
+            if (matches.length > 0) {
+                searchResults.innerHTML = '';
+                matches.forEach(m => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left px-4 py-2.5 hover:bg-slate-900 text-xs flex justify-between items-center text-slate-300 transition";
+                    
+                    btn.innerHTML = `
+                        <span>${m.displayName}</span>
+                        ${m.type === 'dong' ? `<span class="text-amber-500 code-font font-bold">${m.pop.toLocaleString()}명</span>` : '<span class="text-emerald-400">구역 전체</span>'}
+                    `;
+                    
+                    btn.onclick = () => {
+                        playFeedbackSound(400, 0.1);
+                        populateDashboard(m.key);
+                        searchInput.value = '';
+                        searchResults.classList.add('hidden');
+                    };
+                    searchResults.appendChild(btn);
+                });
+                searchResults.classList.remove('hidden');
+            } else {
+                searchResults.classList.add('hidden');
+            }
+        });
+
+        // Close search list on clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.add('hidden');
+            }
+        });
+
+        // Handle Responsive Resize Redraws
+        window.addEventListener('resize', () => {
+            renderTrendChart(regionData[currentSelectedRegionKey].trend);
+        });
+
+        // Initial Startup execution sequence
+        window.addEventListener('DOMContentLoaded', () => {
+            populateDashboard('jejusi_dongs');
+            setTimeout(() => {
+                playFeedbackSound(440, 0.15);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
